@@ -21,18 +21,10 @@ db_url = 'https://i-like-english-so-much.firebaseio.com/'
 voca_db = firebase_admin.initialize_app(cred, {'databaseURL' : db_url})
 
 #UI파일 연결
-#memo_class = uic.loadUiType("memorizing.ui")[0]
-main_class = uic.loadUiType("vocabulary.ui")[0]
+main_class = uic.loadUiType("voca_main.ui")[0]
+memo_class = uic.loadUiType("voca_memorizing.ui")[0]
+list_class = uic.loadUiType("voca_list.ui")[0]
 
-#단어 암기 시 사용하는 class 선언
-'''
-class MemorizeClass(QMainWindow, form_class):
-    def __init(self):
-        super().__init__()
-        self.setupUi(self)'''
-
-
-    
 class Category(Enum):
     EIGHT = 0
     NINE = 1
@@ -64,10 +56,21 @@ class MainClass(QMainWindow, main_class):
         self.option1_main_button.clicked.connect(lambda:self.get_input(Category.MAIN))
         self.option1_basic_button.clicked.connect(lambda:self.get_input(Category.BASIC))
         self.option1_else_button.clicked.connect(lambda:self.get_input(Category.ELSE))
+
+        self.greeting_text.mousePressEvent = self.start_memorizing
+        self.list_button.clicked.connect(self.show_voca_list)
         
     #하하! 단어 좀 외워볼까!?
-    def start_memorizing():
+    def start_memorizing(self, event):
+        self.main = MemoPage()
+        self.main.show()
+        self.close()
         return
+
+    #단어 리스트 관리
+    def show_voca_list(self):
+        dlg = ListDialog()
+        dlg.exec_()
 
     #파이어베이스에 단어 저장
     def add_directly(self, eng, kor, category):
@@ -82,7 +85,6 @@ class MainClass(QMainWindow, main_class):
             ref.child('NUMBERING').child(category).set(old_numbering + 1)
         
         ref.child(category).child(eng).set(new_kor)
-        
         return
 
     #################### 중복 단어 체크 기능 필요!! 현재: 넘버링 추, 뜻 덮어쓰기.
@@ -102,6 +104,38 @@ class MainClass(QMainWindow, main_class):
     def add_file(file_name):
         return
 
+class MemoPage(QMainWindow, memo_class):
+    def __init__(self):
+        super().__init__()
+        self.title = '하하! 신나게 단어나 외우자고!'
+        self.icon = self.style().standardIcon(getattr(QStyle, 'SP_FileDialogDetailedView'))
+        self.setupUi(self)
+        self.setWindowTitle(self.title)
+        self.setWindowIcon(self.icon)
+
+        self.greeting_text.mousePressEvent = self.go_back
+        self.list_button.clicked.connect(self.show_voca_list)
+
+    def go_back(self, event):
+        self.main = MainClass()
+        self.main.show()
+        self.close()
+        return
+    
+    #단어 리스트 관리
+    def show_voca_list(self):
+        dlg = ListDialog()
+        dlg.exec_()
+        
+class ListDialog(QDialog, list_class):
+    def __init__(self):
+        super().__init__()
+        self.title = '하하! 아직 이만큼이나 더 남았다고!'
+        self.icon = self.style().standardIcon(getattr(QStyle, 'SP_FileDialogDetailedView'))
+        self.setupUi(self)
+        self.setWindowTitle(self.title)
+        self.setWindowIcon(self.icon)
+
 if __name__ == "__main__":
     #QApplication: 프로그램 실행 시켜주는 클래스
     app = QApplication(sys.argv)
@@ -114,3 +148,6 @@ if __name__ == "__main__":
 
     #프로그램을 작동시키는 (=프로그램을 이벤트 루프로 진입시키는) 코드
     app.exec_()
+
+    #프로그램 종료
+    sys.exit()
